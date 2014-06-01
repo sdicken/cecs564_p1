@@ -11,19 +11,74 @@ import java.util.List;
 
 public class Utils 
 {
-	private static final int X0 = 0;
-	private static final int Y0 = 0;
+	private static final Integer X0 = 0;
+	private static final Integer Y0 = 0;
 	private static final int LOWERCASE_ASCII_A = 97;
-	private static final int UPPERCASE_ASCII_A = 65;
+	private static final Integer UPPERCASE_ASCII_A = 65;
 	
-	public static void encrypt()
+	public static String encrypt(List<String> words, Integer aKey, Integer kKey)
 	{
-		
+		List<List<Integer>> plaintextInZ26 = removeASCIIEncoding(convertWordsToASCIIDecimal(convertUpperToLower(words)));
+		StringBuilder sb = new StringBuilder();
+		int recursionCounter = 0;
+		for(int i = 0; i < plaintextInZ26.size(); i++)
+		{
+			List<Integer> innerList = plaintextInZ26.get(i);
+			for(int j = 0; j < innerList.size(); j++)
+			{
+				Integer z26Value = innerList.get(j);
+				Integer encipheredValue = new Integer(0);
+				if(recursionCounter == 0)
+				{
+					encipheredValue = (z26Value + aKey*X0 + kKey) % 26;
+				}
+				else
+				{
+					Integer previousZ26Value = innerList.get(j-1);
+					encipheredValue = (z26Value + aKey*previousZ26Value + kKey) % 26;
+				}
+				encipheredValue += UPPERCASE_ASCII_A; // by convention for ciphertext
+				char ciphertextCharacter = (char) encipheredValue.byteValue();
+				sb.append(ciphertextCharacter);
+				recursionCounter++;
+			}
+		}
+		return sb.toString();
 	}
 	
-	public static void decrypt()
+	public static String decrypt(String ciphertext, Integer aKey, Integer kKey)
 	{
-		
+		char[] ciphertextCharacters = ciphertext.toCharArray();
+		int recursionCounter = 0;
+		StringBuilder sb = new StringBuilder();
+		Integer previousDecipheredValue = new Integer(0);
+		for(int i = 0; i < ciphertextCharacters.length; i++)
+		{
+			char ciphertextCharacter = ciphertextCharacters[i];			
+			Integer asciiValue = (int) ciphertextCharacter;
+			Integer ciphertextInZ26 = asciiValue - UPPERCASE_ASCII_A;
+			Integer decipheredValue = new Integer(0);
+			
+			if(recursionCounter == 0)
+			{
+				decipheredValue = (ciphertextInZ26 - aKey*X0 - kKey) % 26;
+			}
+			else
+			{
+				decipheredValue = (ciphertextInZ26 - aKey*previousDecipheredValue - kKey) % 26;
+			}
+			// borrowed from https://stackoverflow.com/questions/4403542/how-does-java-do-modulus-calculations-with-negative-numbers
+			if (decipheredValue < 0)
+			{
+				decipheredValue += 26;
+			}
+			previousDecipheredValue = decipheredValue;	// capture value before adding ASCII encoding
+			decipheredValue += LOWERCASE_ASCII_A;
+			char plaintextCharacter = (char) decipheredValue.byteValue();
+			sb.append(plaintextCharacter);
+			recursionCounter++;
+		}
+		return sb.toString();
 	}
 	
 	public static void attack()

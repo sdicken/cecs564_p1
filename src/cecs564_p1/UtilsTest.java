@@ -56,4 +56,23 @@ public class UtilsTest
 		List<List<Integer>> actual = Utils.convertWordsToASCIIDecimal(words);
 		assertTrue(expected.equals(actual));
 	}
+	
+	@Test
+	public void testEncrypt()
+	{
+		List<String> words = new ArrayList<String>();
+		words.add("look");
+		String expected = "AZFB";
+		String actual = Utils.encrypt(words, Integer.valueOf(2), Integer.valueOf(15));
+		assertTrue(expected.equals(actual));
+	}
+	
+	@Test
+	public void testDecrypt()
+	{
+		String ciphertext = "AZFB";
+		String expected = "look";
+		String actual = Utils.decrypt(ciphertext, Integer.valueOf(2), Integer.valueOf(15));
+		assertTrue(expected.equals(actual));
+	}
 }
