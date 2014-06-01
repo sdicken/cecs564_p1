@@ -13,6 +13,8 @@ public class Utils
 {
 	private static final int X0 = 0;
 	private static final int Y0 = 0;
+	private static final int LOWERCASE_ASCII_A = 97;
+	private static final int UPPERCASE_ASCII_A = 65;
 	
 	public static void encrypt()
 	{
@@ -67,28 +69,40 @@ public class Utils
 		return output;
 	}
 	
-	public static List<String> convertWordsToASCIIDecimal(List<String> words)
+	// -- END PREVIOUSLY TESTED METHODS --
+	
+	public static List<List<Integer>> convertWordsToASCIIDecimal(List<String> words)
 	{
-		List<String> output = new ArrayList<String>();
+		List<List<Integer>> output = new ArrayList<List<Integer>>();
 		for(int i = 0; i < words.size(); i++)
 		{
 			String line = words.get(i);
-			StringBuilder sb = new StringBuilder();
-			boolean first = true;
+			List<Integer> innerList = new ArrayList<Integer>();
 			for(int j = 0; j < line.length(); j++)
 			{
-				if(first)
-					first = false;
-				else
-					sb.append(" ");
 				char itemInLine = line.charAt(j);
 				int charAsDecimal = (int) itemInLine;
-				sb.append(charAsDecimal);
+				innerList.add(Integer.valueOf(charAsDecimal));
 			}
-			output.add(sb.toString());
+			output.add(innerList);
 		}
 		return output;
 	}
 	
-	// -- END PREVIOUSLY TESTED METHODS --
+	public static List<List<Integer>> removeASCIIEncoding(List<List<Integer>> asciiEncodedLetters)
+	{
+		List<List<Integer>> result = new ArrayList<List<Integer>>();
+		for(int i = 0; i < asciiEncodedLetters.size(); i++)
+		{
+			List<Integer> innerList = asciiEncodedLetters.get(i);
+			for(int j = 0; j < innerList.size(); j++)
+			{
+				Integer oldElement = innerList.get(j);
+				Integer shift = Integer.valueOf(LOWERCASE_ASCII_A);
+				innerList.set(j, oldElement - shift);
+			}
+			result.add(innerList);
+		}
+		return result;
+	}
 }
