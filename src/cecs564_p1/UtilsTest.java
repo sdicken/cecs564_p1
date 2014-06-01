@@ -19,14 +19,12 @@ public class UtilsTest
 		innerList.add(Integer.valueOf(111));
 		innerList.add(Integer.valueOf(107));
 		asciiEncodedLetters.add(innerList);
-		List<List<Integer>> expected = new ArrayList<List<Integer>>();
-		List<Integer> innerList2 = new ArrayList<Integer>();
-		innerList2.add(Integer.valueOf(11));
-		innerList2.add(Integer.valueOf(14));
-		innerList2.add(Integer.valueOf(14));
-		innerList2.add(Integer.valueOf(10));
-		expected.add(innerList2);
-		List<List<Integer>> actual = Utils.removeASCIIEncoding(asciiEncodedLetters);
+		List<Integer> expected = new ArrayList<Integer>();
+		expected.add(Integer.valueOf(11));
+		expected.add(Integer.valueOf(14));
+		expected.add(Integer.valueOf(14));
+		expected.add(Integer.valueOf(10));
+		List<Integer> actual = Utils.removeASCIIEncoding(asciiEncodedLetters);
 		assertTrue(expected.equals(actual));
 	}
 	
@@ -73,6 +71,15 @@ public class UtilsTest
 		String ciphertext = "AZFB";
 		String expected = "look";
 		String actual = Utils.decrypt(ciphertext, Integer.valueOf(2), Integer.valueOf(15));
+		assertTrue(expected.equals(actual));
+	}
+	
+	@Test
+	public void testAttackBruteForce()
+	{
+		String ciphertext = "AZFB";
+		String expected = "look";
+		String actual = Utils.attack(ciphertext);
 		assertTrue(expected.equals(actual));
 	}
 }
