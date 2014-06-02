@@ -11,9 +11,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Scanner;
 
 public class Utils 
 {
@@ -22,6 +25,13 @@ public class Utils
 	private static final Integer UPPERCASE_ASCII_A = 65;
 	public static final String A_KEY = "aKey";
 	public static final String K_KEY = "kKey";
+	private static final String [] commonTwoLetterWords = {"of", "to", "in", "it", "is", 
+		"be", "as", "at", "so", "we", "he", "by", "or", "on", "do", "if", "me", "my", 
+		"up", "an", "go", "no", "us", "am"};
+	
+	private static final String [] commonThreeLetterWords = {"the", "and", "for", "are", "but",
+		"not", "you", "all", "any", "can", "had", "her", "was", "one", "our", "out", "day", 
+		"get", "has", "him", "his", "how", "man"};
 	
 	public static String encrypt(List<String> words, Integer aKey, Integer kKey)
 	{
@@ -91,18 +101,113 @@ public class Utils
 		return plaintext;
 	}
 	
-	public static String attack(String ciphertext)
+	public static Map<String, Integer> attack(String ciphertext)
 	{
-		for(int i = 1; i < 26; i++)
+		List<Map<Integer,Map<Integer,Integer>>> top5 = new ArrayList<Map<Integer,Map<Integer,Integer>>>();
+		Integer minimumSequencesRecognized = Integer.MAX_VALUE;
+		Integer maximumSequencesRecognized = Integer.MIN_VALUE;
+		for(int i = 1; i < 26; i++)	// loop over aKey space
 		{
-			for(int j = 1; j < 26; j++)
+			for(int j = 1; j < 26; j++)	// loop over kKey space
 			{
-				System.out.println(decrypt(ciphertext, i, j));
+				String possiblePlaintext = decrypt(ciphertext, i, j);
+				Integer sequencesRecognized = performEnglishAnalysis(possiblePlaintext);
+				
+				if(top5.size() < 5)
+				{
+					Map<Integer,Integer> kKeyToSequencesRecognizedMap = Collections.singletonMap(j, sequencesRecognized);
+					Map<Integer,Map<Integer,Integer>> aKeyTokKeyMap = Collections.singletonMap(i, kKeyToSequencesRecognizedMap);
+					top5.add(aKeyTokKeyMap);
+				}
+				else	// remove one with lowest # of sequences recognized
+				{
+					if(sequencesRecognized <= minimumSequencesRecognized) // weed these out right away, don't want to search top 5 needlessly
+					{
+						continue;
+					}
+					else
+					{
+						int minimumIndex = 0;
+						int minimumValue = Integer.MAX_VALUE;
+						for(int k = 0; k < top5.size(); k++)
+						{
+							Map<Integer,Map<Integer,Integer>> current = top5.get(k);
+							for(Entry<Integer,Map<Integer,Integer>> entry1 : current.entrySet())
+							{
+								Map<Integer,Integer> current2 = entry1.getValue();
+								for(Entry<Integer,Integer> entry2 : current2.entrySet())
+								{
+									Integer val = entry2.getValue();
+									if(val < minimumValue)
+									{
+										minimumIndex = k;
+										minimumValue = val;
+									}
+								}
+							}
+						}
+						top5.remove(minimumIndex);
+						Map<Integer,Integer> kKeyToSequencesRecognizedMap = Collections.singletonMap(j, sequencesRecognized);
+						Map<Integer,Map<Integer,Integer>> aKeyTokKeyMap = Collections.singletonMap(i, kKeyToSequencesRecognizedMap);
+						top5.add(aKeyTokKeyMap);
+					}
+				}
+				
+				if(sequencesRecognized > maximumSequencesRecognized)
+				{
+					maximumSequencesRecognized = sequencesRecognized;
+				}
+				else if(sequencesRecognized < minimumSequencesRecognized)
+				{
+					minimumSequencesRecognized = sequencesRecognized;
+				}
 			}
 		}
-		return null;
+		Map<String, Integer> result = chooseFromDecryptionOptions(ciphertext, top5);
+		return result;
 	}
 	
+	private static Map<String, Integer> chooseFromDecryptionOptions(String ciphertext,
+			List<Map<Integer, Map<Integer, Integer>>> top5) 
+	{
+		Map<String, Integer> result = new HashMap<String, Integer>();
+//		for(int k = 0; k < top5.size(); k++)
+//		{
+//			Map<Integer,Map<Integer,Integer>> current = top5.get(k);
+//			for(Entry<Integer,Map<Integer,Integer>> entry1 : current.entrySet())
+//			{
+//				Integer aKey = entry1.getKey();
+//				Map<Integer,Integer> current2 = entry1.getValue();
+//				for(Entry<Integer,Integer> entry2 : current2.entrySet())
+//				{
+//					Integer kKey = entry2.getKey();
+//					System.out.println(k + ") " + decrypt(ciphertext, aKey, kKey));
+//				}
+//			}
+//		}
+//		System.out.print("Choose most correct looking option: ");
+//		Scanner scanner = new Scanner(System.in);
+//		int chosenOption = scanner.nextInt();
+//		scanner.close();
+//		Map<Integer,Map<Integer,Integer>> choice = top5.get(chosenOption);
+		Map<Integer,Map<Integer,Integer>> choice = top5.get(0);
+		Integer aKey = 0;
+		Integer kKey = 0;
+		for(Entry<Integer,Map<Integer,Integer>> entry1 : choice.entrySet())
+		{
+			aKey = entry1.getKey();
+			Map<Integer,Integer> current2 = entry1.getValue();
+			for(Entry<Integer,Integer> entry2 : current2.entrySet())
+			{
+				kKey = entry2.getKey();
+			}
+			
+		}
+		result.put(A_KEY, aKey);
+		result.put(K_KEY, kKey);
+		return result;
+	}
+
 	// -- BEGIN PREVIOUSLY TESTED METHODS --
 	public static List<String> readLinesOfFile(String path) throws IOException
 	{
@@ -116,13 +221,13 @@ public class Utils
 		for(int i = 0; i < lines.size(); i++)
 		{
 			String line = lines.get(i);
-			List<String> splits = Arrays.asList(line.split(" "));
-			for(int j = 0; j < splits.size(); j++)
+			for(int j = 0; j < line.length(); j++)
 			{
-				String split = splits.get(j);
-				if(split.equals(""))
-					continue;
-				output.add(splits.get(j));
+				int asciiByteValue = (int) line.charAt(j);
+				if((asciiByteValue >= 65 && asciiByteValue <= 90) || (asciiByteValue >= 97 && asciiByteValue <= 122))
+				{
+					output.add(String.valueOf(line.charAt(j)));
+				}
 			}
 		}
 		return output;
@@ -214,5 +319,27 @@ public class Utils
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public static Integer performEnglishAnalysis(String decryptedText)
+	{
+		Integer result = 0;
+		List<String> commonTwoWordList = Arrays.asList(commonTwoLetterWords);
+		List<String> commonThreeWordList = Arrays.asList(commonThreeLetterWords);
+		for(int i = 0; i < commonTwoWordList.size(); i++)
+		{
+			if(decryptedText.contains(commonTwoWordList.get(i)))
+			{
+				result++;
+			}
+		}
+		for(int i = 0; i < commonThreeWordList.size(); i++)
+		{
+			if(decryptedText.contains(commonThreeWordList.get(i)))
+			{
+				result++;
+			}
+		}
+		return result;
 	}
 }

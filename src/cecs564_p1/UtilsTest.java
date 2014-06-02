@@ -3,7 +3,9 @@ package cecs564_p1;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -77,9 +79,20 @@ public class UtilsTest
 	@Test
 	public void testAttackBruteForce()
 	{
-		String ciphertext = "AZFB";
-		String expected = "look";
-		String actual = Utils.attack(ciphertext);
+		String ciphertext = "IIHJNCDMJOQIHOBFXAZL";
+		Map<String, Integer> expected = new HashMap<String, Integer>();
+		expected.put(Utils.A_KEY, 2);
+		expected.put(Utils.K_KEY, 15);
+		Map<String, Integer> actual = Utils.attack(ciphertext);
+		assertTrue(expected.equals(actual));
+	}
+	
+	@Test
+	public void testEnglishAnalysis()
+	{
+		String combinedWords = "themanoverthereisbig";
+		Integer expected = 7;
+		Integer actual = Utils.performEnglishAnalysis(combinedWords);
 		assertTrue(expected.equals(actual));
 	}
 }

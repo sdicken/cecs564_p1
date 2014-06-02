@@ -14,6 +14,9 @@ public class Driver
 			Map<String, Integer> keys = Utils.readKeyFile("keyfile");
 			String ciphertext = Utils.encrypt(words, keys.get(Utils.A_KEY), keys.get(Utils.K_KEY));
 			Utils.decrypt(ciphertext, keys.get(Utils.A_KEY), keys.get(Utils.K_KEY));
+			Map<String, Integer> senderKeys = Utils.attack(ciphertext);
+			System.out.println(senderKeys.get(Utils.A_KEY));
+			System.out.println(senderKeys.get(Utils.K_KEY));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
