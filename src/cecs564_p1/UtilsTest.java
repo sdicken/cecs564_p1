@@ -72,7 +72,7 @@ public class UtilsTest
 	{
 		String ciphertext = "AZFB";
 		String expected = "look";
-		String actual = Utils.decrypt(ciphertext, Integer.valueOf(2), Integer.valueOf(15));
+		String actual = Utils.decrypt(ciphertext, Integer.valueOf(2), Integer.valueOf(15), false);
 		assertTrue(expected.equals(actual));
 	}
 	
@@ -83,7 +83,7 @@ public class UtilsTest
 		Map<String, Integer> expected = new HashMap<String, Integer>();
 		expected.put(Utils.A_KEY, 2);
 		expected.put(Utils.K_KEY, 15);
-		Map<String, Integer> actual = Utils.attack(ciphertext);
+		Map<String, Integer> actual = Utils.attack(ciphertext, false);
 		assertTrue(expected.equals(actual));
 	}
 	

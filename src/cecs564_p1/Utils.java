@@ -64,7 +64,7 @@ public class Utils
 		return ciphertext;
 	}
 	
-	public static String decrypt(String ciphertext, Integer aKey, Integer kKey)
+	public static String decrypt(String ciphertext, Integer aKey, Integer kKey, boolean testMode)
 	{
 		char[] ciphertextCharacters = ciphertext.toCharArray();
 		int recursionCounter = 0;
@@ -97,11 +97,12 @@ public class Utils
 			recursionCounter++;
 		}
 		String plaintext = sb.toString();
-		writeToFile("plaintext.txt", plaintext);
+		if(!testMode)
+			writeToFile("plaintext.txt", plaintext);
 		return plaintext;
 	}
 	
-	public static Map<String, Integer> attack(String ciphertext)
+	public static Map<String, Integer> attack(String ciphertext, boolean interactiveMode)
 	{
 		List<Map<Integer,Map<Integer,Integer>>> top5 = new ArrayList<Map<Integer,Map<Integer,Integer>>>();
 		Integer minimumSequencesRecognized = Integer.MAX_VALUE;
@@ -110,7 +111,7 @@ public class Utils
 		{
 			for(int j = 1; j < 26; j++)	// loop over kKey space
 			{
-				String possiblePlaintext = decrypt(ciphertext, i, j);
+				String possiblePlaintext = decrypt(ciphertext, i, j, true);
 				Integer sequencesRecognized = performEnglishAnalysis(possiblePlaintext);
 				
 				if(top5.size() < 5)
@@ -163,50 +164,9 @@ public class Utils
 				}
 			}
 		}
-		Map<String, Integer> result = chooseFromDecryptionOptions(ciphertext, top5);
+		Map<String, Integer> result = chooseFromDecryptionOptions(ciphertext, top5, interactiveMode);
 		return result;
-	}
-	
-	private static Map<String, Integer> chooseFromDecryptionOptions(String ciphertext,
-			List<Map<Integer, Map<Integer, Integer>>> top5) 
-	{
-		Map<String, Integer> result = new HashMap<String, Integer>();
-//		for(int k = 0; k < top5.size(); k++)
-//		{
-//			Map<Integer,Map<Integer,Integer>> current = top5.get(k);
-//			for(Entry<Integer,Map<Integer,Integer>> entry1 : current.entrySet())
-//			{
-//				Integer aKey = entry1.getKey();
-//				Map<Integer,Integer> current2 = entry1.getValue();
-//				for(Entry<Integer,Integer> entry2 : current2.entrySet())
-//				{
-//					Integer kKey = entry2.getKey();
-//					System.out.println(k + ") " + decrypt(ciphertext, aKey, kKey));
-//				}
-//			}
-//		}
-//		System.out.print("Choose most correct looking option: ");
-//		Scanner scanner = new Scanner(System.in);
-//		int chosenOption = scanner.nextInt();
-//		scanner.close();
-//		Map<Integer,Map<Integer,Integer>> choice = top5.get(chosenOption);
-		Map<Integer,Map<Integer,Integer>> choice = top5.get(0);
-		Integer aKey = 0;
-		Integer kKey = 0;
-		for(Entry<Integer,Map<Integer,Integer>> entry1 : choice.entrySet())
-		{
-			aKey = entry1.getKey();
-			Map<Integer,Integer> current2 = entry1.getValue();
-			for(Entry<Integer,Integer> entry2 : current2.entrySet())
-			{
-				kKey = entry2.getKey();
-			}
-			
-		}
-		result.put(A_KEY, aKey);
-		result.put(K_KEY, kKey);
-		return result;
-	}
+	}	
 
 	// -- BEGIN PREVIOUSLY TESTED METHODS --
 	public static List<String> readLinesOfFile(String path) throws IOException
@@ -340,6 +300,54 @@ public class Utils
 				result++;
 			}
 		}
+		return result;
+	}
+	
+	private static Map<String, Integer> chooseFromDecryptionOptions(String ciphertext,
+			List<Map<Integer, Map<Integer, Integer>>> top5, boolean interactiveMode) 
+	{
+		Map<String, Integer> result = new HashMap<String, Integer>();
+		for(int k = 0; k < top5.size(); k++)
+		{
+			Map<Integer,Map<Integer,Integer>> current = top5.get(k);
+			for(Entry<Integer,Map<Integer,Integer>> entry1 : current.entrySet())
+			{
+				Integer aKey = entry1.getKey();
+				Map<Integer,Integer> current2 = entry1.getValue();
+				for(Entry<Integer,Integer> entry2 : current2.entrySet())
+				{
+					Integer kKey = entry2.getKey();
+					System.out.println(k + ") " + decrypt(ciphertext, aKey, kKey, true).substring(0, 20));
+				}
+			}
+		}
+		Map<Integer,Map<Integer,Integer>> choice = null;
+		if(interactiveMode)
+		{
+			System.out.print("Choose most correct looking option: ");
+			Scanner scanner = new Scanner(System.in);
+			int chosenOption = scanner.nextInt();
+			scanner.close();
+			choice = top5.get(chosenOption);
+		}
+		else
+		{
+			choice = top5.get(0);
+		}
+		Integer aKey = 0;
+		Integer kKey = 0;
+		for(Entry<Integer,Map<Integer,Integer>> entry1 : choice.entrySet())
+		{
+			aKey = entry1.getKey();
+			Map<Integer,Integer> current2 = entry1.getValue();
+			for(Entry<Integer,Integer> entry2 : current2.entrySet())
+			{
+				kKey = entry2.getKey();
+			}
+			
+		}
+		result.put(A_KEY, aKey);
+		result.put(K_KEY, kKey);
 		return result;
 	}
 }
