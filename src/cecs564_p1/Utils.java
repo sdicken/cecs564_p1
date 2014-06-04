@@ -20,11 +20,13 @@ import java.util.Scanner;
 
 public class Utils 
 {
-	private static final Integer X0 = 0;
 	private static final int LOWERCASE_ASCII_A = 97;
 	private static final Integer UPPERCASE_ASCII_A = 65;
+	private static final String MINIMUM_VALUE = "minVal";
+	private static final String MINIMUM_INDEX = "minIndex";
 	public static final String A_KEY = "aKey";
 	public static final String K_KEY = "kKey";
+	public static final String X0 = "x0";
 	private static final String [] commonTwoLetterWords = {"of", "to", "in", "it", "is", 
 		"be", "as", "at", "so", "we", "he", "by", "or", "on", "do", "if", "me", "my", 
 		"up", "an", "go", "no", "us", "am"};
@@ -33,7 +35,7 @@ public class Utils
 		"not", "you", "all", "any", "can", "had", "her", "was", "one", "our", "out", "day", 
 		"get", "has", "him", "his", "how", "man"};
 	
-	public static String encrypt(List<String> words, Integer aKey, Integer kKey)
+	public static String encrypt(List<String> words, Integer aKey, Integer kKey, Integer x0)
 	{
 		List<Integer> plaintextInZ26 = removeASCIIEncoding(convertWordsToASCIIDecimal(convertUpperToLower(words)));
 		StringBuilder sb = new StringBuilder();
@@ -46,7 +48,7 @@ public class Utils
 			Integer encipheredValue = new Integer(0);
 			if(recursionCounter == 0)
 			{
-				encipheredValue = (z26Value + aKey*X0 + kKey) % 26;
+				encipheredValue = (z26Value + aKey*x0 + kKey) % 26;
 			}
 			else
 			{
@@ -64,7 +66,7 @@ public class Utils
 		return ciphertext;
 	}
 	
-	public static String decrypt(String ciphertext, Integer aKey, Integer kKey, boolean testMode)
+	public static String decrypt(String ciphertext, Integer aKey, Integer kKey, Integer x0, boolean testMode)
 	{
 		char[] ciphertextCharacters = ciphertext.toCharArray();
 		int recursionCounter = 0;
@@ -79,7 +81,7 @@ public class Utils
 			
 			if(recursionCounter == 0)
 			{
-				decipheredValue = (ciphertextInZ26 - aKey*X0 - kKey) % 26;
+				decipheredValue = (ciphertextInZ26 - aKey*x0 - kKey) % 26;
 			}
 			else
 			{
@@ -104,63 +106,49 @@ public class Utils
 	
 	public static Map<String, Integer> attack(String ciphertext, boolean interactiveMode)
 	{
-		List<Map<Integer,Map<Integer,Integer>>> top5 = new ArrayList<Map<Integer,Map<Integer,Integer>>>();
+		List<Map<Integer,Map<Integer,Map<Integer,Integer>>>> top5 = new ArrayList<Map<Integer,Map<Integer,Map<Integer,Integer>>>>();
 		Integer minimumSequencesRecognized = Integer.MAX_VALUE;
 		Integer maximumSequencesRecognized = Integer.MIN_VALUE;
 		for(int i = 1; i < 26; i++)	// loop over aKey space
 		{
 			for(int j = 1; j < 26; j++)	// loop over kKey space
 			{
-				String possiblePlaintext = decrypt(ciphertext, i, j, true);
-				Integer sequencesRecognized = performEnglishAnalysis(possiblePlaintext);
-				
-				if(top5.size() < 5)
+				for(int k = 0; k < 26; k++)	// loop over x0 space
 				{
-					Map<Integer,Integer> kKeyToSequencesRecognizedMap = Collections.singletonMap(j, sequencesRecognized);
-					Map<Integer,Map<Integer,Integer>> aKeyTokKeyMap = Collections.singletonMap(i, kKeyToSequencesRecognizedMap);
-					top5.add(aKeyTokKeyMap);
-				}
-				else	// remove one with lowest # of sequences recognized
-				{
-					if(sequencesRecognized <= minimumSequencesRecognized) // weed these out right away, don't want to search top 5 needlessly
+					String possiblePlaintext = decrypt(ciphertext, i, j, k, true);
+					Integer sequencesRecognized = performEnglishAnalysis(possiblePlaintext);
+					
+					if(top5.size() < 5)
 					{
-						continue;
-					}
-					else
-					{
-						int minimumIndex = 0;
-						int minimumValue = Integer.MAX_VALUE;
-						for(int k = 0; k < top5.size(); k++)
-						{
-							Map<Integer,Map<Integer,Integer>> current = top5.get(k);
-							for(Entry<Integer,Map<Integer,Integer>> entry1 : current.entrySet())
-							{
-								Map<Integer,Integer> current2 = entry1.getValue();
-								for(Entry<Integer,Integer> entry2 : current2.entrySet())
-								{
-									Integer val = entry2.getValue();
-									if(val < minimumValue)
-									{
-										minimumIndex = k;
-										minimumValue = val;
-									}
-								}
-							}
-						}
-						top5.remove(minimumIndex);
-						Map<Integer,Integer> kKeyToSequencesRecognizedMap = Collections.singletonMap(j, sequencesRecognized);
-						Map<Integer,Map<Integer,Integer>> aKeyTokKeyMap = Collections.singletonMap(i, kKeyToSequencesRecognizedMap);
+						Map<Integer,Integer> x0ToSequencesRecognizedMap = Collections.singletonMap(k, sequencesRecognized);
+						Map<Integer,Map<Integer,Integer>> kKeyToX0Map = Collections.singletonMap(j, x0ToSequencesRecognizedMap);
+						Map<Integer,Map<Integer,Map<Integer,Integer>>> aKeyTokKeyMap = Collections.singletonMap(i, kKeyToX0Map);
 						top5.add(aKeyTokKeyMap);
 					}
-				}
-				
-				if(sequencesRecognized > maximumSequencesRecognized)
-				{
-					maximumSequencesRecognized = sequencesRecognized;
-				}
-				else if(sequencesRecognized < minimumSequencesRecognized)
-				{
-					minimumSequencesRecognized = sequencesRecognized;
+					else	// remove one with lowest # of sequences recognized
+					{
+						if(sequencesRecognized <= minimumSequencesRecognized) // weed these out right away, don't want to search top 5 needlessly
+						{
+							continue;
+						}
+						else
+						{
+							top5.remove(findMinimumIndex(top5));
+							Map<Integer,Integer> x0ToSequencesRecognizedMap = Collections.singletonMap(k, sequencesRecognized);
+							Map<Integer,Map<Integer,Integer>> kKeyToX0Map = Collections.singletonMap(j, x0ToSequencesRecognizedMap);
+							Map<Integer,Map<Integer,Map<Integer,Integer>>> aKeyTokKeyMap = Collections.singletonMap(i, kKeyToX0Map);
+							top5.add(aKeyTokKeyMap);
+						}
+					}
+					
+					if(sequencesRecognized > maximumSequencesRecognized)
+					{
+						maximumSequencesRecognized = sequencesRecognized;
+					}
+					else if(sequencesRecognized < minimumSequencesRecognized)
+					{
+						minimumSequencesRecognized = sequencesRecognized;
+					}
 				}
 			}
 		}
@@ -257,6 +245,10 @@ public class Utils
 			{
 				result.put(K_KEY, Integer.valueOf(line.split("=")[1]));
 			}
+			else if(line.startsWith(X0))
+			{
+				result.put(X0, Integer.valueOf(line.split("=")[1]));
+			}
 		}
 		return result;
 	}
@@ -304,24 +296,10 @@ public class Utils
 	}
 	
 	private static Map<String, Integer> chooseFromDecryptionOptions(String ciphertext,
-			List<Map<Integer, Map<Integer, Integer>>> top5, boolean interactiveMode) 
+			List<Map<Integer, Map<Integer, Map<Integer,Integer>>>> top5, boolean interactiveMode) 
 	{
-		Map<String, Integer> result = new HashMap<String, Integer>();
-		for(int k = 0; k < top5.size(); k++)
-		{
-			Map<Integer,Map<Integer,Integer>> current = top5.get(k);
-			for(Entry<Integer,Map<Integer,Integer>> entry1 : current.entrySet())
-			{
-				Integer aKey = entry1.getKey();
-				Map<Integer,Integer> current2 = entry1.getValue();
-				for(Entry<Integer,Integer> entry2 : current2.entrySet())
-				{
-					Integer kKey = entry2.getKey();
-					System.out.println(k + ") " + decrypt(ciphertext, aKey, kKey, true).substring(0, 20));
-				}
-			}
-		}
-		Map<Integer,Map<Integer,Integer>> choice = null;
+		printDecryptionOptions(top5, ciphertext);
+		Map<Integer,Map<Integer,Map<Integer,Integer>>> choice = null;
 		if(interactiveMode)
 		{
 			System.out.print("Choose most correct looking option: ");
@@ -334,20 +312,96 @@ public class Utils
 		{
 			choice = top5.get(0);
 		}
+		return flattenKeyMapping(choice);
+	}
+	
+	private static void printDecryptionOptions(List<Map<Integer, Map<Integer, Map<Integer,Integer>>>> top5, String ciphertext)
+	{
+		for(int k = 0; k < top5.size(); k++)
+		{
+			Map<Integer,Map<Integer,Map<Integer,Integer>>> aKeyTokKeyMap = top5.get(k);
+			for(Entry<Integer,Map<Integer,Map<Integer,Integer>>> elementOfaKeyTokKeyMap : aKeyTokKeyMap.entrySet())
+			{
+				Integer aKey = elementOfaKeyTokKeyMap.getKey();
+				Map<Integer,Map<Integer,Integer>> kKeyToX0Map = elementOfaKeyTokKeyMap.getValue();
+				for(Entry<Integer,Map<Integer,Integer>> elementOfkKeyToX0Map : kKeyToX0Map.entrySet())
+				{
+					Integer kKey = elementOfkKeyToX0Map.getKey();
+					Map<Integer,Integer> x0ToSequencesRecognizedMap = elementOfkKeyToX0Map.getValue();
+					for(Entry<Integer,Integer> elementOfX0ToSequencesRecognizedMap : x0ToSequencesRecognizedMap.entrySet())
+					{
+						Integer x0 = elementOfX0ToSequencesRecognizedMap.getKey();
+						System.out.println(k + ") " + decrypt(ciphertext, aKey, kKey, x0, true).substring(0, 20));
+					}
+				}
+			}
+		}
+	}
+	
+	private static int findMinimumIndex(List<Map<Integer,Map<Integer,Map<Integer,Integer>>>> top5)
+	{
+		int minimumIndex = 0;
+		int minimumValue = Integer.MAX_VALUE;
+		for(int i = 0; i < top5.size(); i++)
+		{
+			Map<Integer,Map<Integer,Map<Integer,Integer>>> aKeyTokKeyMap = top5.get(i);
+			Map<String,Object> results = evaluateKeyMappingForMinimum(aKeyTokKeyMap, minimumValue);
+			if(results.containsKey(MINIMUM_VALUE))
+			{
+				minimumIndex = i;
+				minimumValue = (int) results.get(MINIMUM_VALUE);
+			}
+		}
+		return minimumIndex;
+	}
+	
+	private static Map<String,Object> evaluateKeyMappingForMinimum(Map<Integer,Map<Integer,Map<Integer,Integer>>> aKeyTokKeyMap, int currentMinimumValue)
+	{
+		Map<String,Object> result = new HashMap<String,Object>();
+		int minimumValue = currentMinimumValue;
+		for(Entry<Integer,Map<Integer,Map<Integer,Integer>>> elementOfaKeyTokKeyMap : aKeyTokKeyMap.entrySet())
+		{
+			Map<Integer,Map<Integer,Integer>> kKeyToX0Map = elementOfaKeyTokKeyMap.getValue();
+			for(Entry<Integer,Map<Integer,Integer>> elementOfkKeyToX0Map : kKeyToX0Map.entrySet())
+			{
+				Map<Integer,Integer> x0ToSequencesRecognizedMap = elementOfkKeyToX0Map.getValue();
+				for(Entry<Integer,Integer> elementOfX0ToSequencesRecognizedMap : x0ToSequencesRecognizedMap.entrySet())
+				{
+					Integer val = elementOfX0ToSequencesRecognizedMap.getValue();
+					if(val < minimumValue)
+					{
+						result.put(MINIMUM_INDEX, true);
+						result.put(MINIMUM_VALUE, val);
+					}
+				}
+			}
+		}
+		return result;
+	}
+	
+	private static Map<String,Integer> flattenKeyMapping(Map<Integer,Map<Integer,Map<Integer,Integer>>> aKeyTokKeyMap)
+	{
+		Map<String,Integer> result = new HashMap<String,Integer>();
 		Integer aKey = 0;
 		Integer kKey = 0;
-		for(Entry<Integer,Map<Integer,Integer>> entry1 : choice.entrySet())
+		Integer x0 = 0;
+		for(Entry<Integer,Map<Integer,Map<Integer,Integer>>> entry1 : aKeyTokKeyMap.entrySet())
 		{
 			aKey = entry1.getKey();
-			Map<Integer,Integer> current2 = entry1.getValue();
-			for(Entry<Integer,Integer> entry2 : current2.entrySet())
+			Map<Integer,Map<Integer,Integer>> current2 = entry1.getValue();
+			for(Entry<Integer,Map<Integer,Integer>> entry2 : current2.entrySet())
 			{
 				kKey = entry2.getKey();
+				Map<Integer,Integer> current3 = entry2.getValue();
+				for(Entry<Integer,Integer> entry3 : current3.entrySet())
+				{
+					x0 = entry3.getKey();
+				}
 			}
-			
 		}
 		result.put(A_KEY, aKey);
 		result.put(K_KEY, kKey);
+		result.put(X0, x0);
 		return result;
 	}
 }

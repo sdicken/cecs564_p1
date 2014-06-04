@@ -7,10 +7,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.Before;
 import org.junit.Test;
 
 public class UtilsTest 
 {
+	private Integer A_KEY;
+	private Integer K_KEY;
+	private Integer X0;
+	
+	@Before
+	public void setUp()
+	{
+		A_KEY = 2;
+		K_KEY = 15;
+		X0 = 0;
+	}
+	
 	@Test
 	public void testRemoveASCII()
 	{
@@ -63,7 +76,7 @@ public class UtilsTest
 		List<String> words = new ArrayList<String>();
 		words.add("look");
 		String expected = "AZFB";
-		String actual = Utils.encrypt(words, Integer.valueOf(2), Integer.valueOf(15));
+		String actual = Utils.encrypt(words, A_KEY, K_KEY, X0);
 		assertTrue(expected.equals(actual));
 	}
 	
@@ -72,7 +85,7 @@ public class UtilsTest
 	{
 		String ciphertext = "AZFB";
 		String expected = "look";
-		String actual = Utils.decrypt(ciphertext, Integer.valueOf(2), Integer.valueOf(15), false);
+		String actual = Utils.decrypt(ciphertext, A_KEY, K_KEY, X0, false);
 		assertTrue(expected.equals(actual));
 	}
 	
@@ -83,6 +96,7 @@ public class UtilsTest
 		Map<String, Integer> expected = new HashMap<String, Integer>();
 		expected.put(Utils.A_KEY, 2);
 		expected.put(Utils.K_KEY, 15);
+		expected.put(Utils.X0, 0);
 		Map<String, Integer> actual = Utils.attack(ciphertext, false);
 		assertTrue(expected.equals(actual));
 	}
